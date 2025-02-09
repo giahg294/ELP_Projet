@@ -1,0 +1,20 @@
+{
+    "scripts": {
+        "start": "node justone.js"
+    },
+    "name": "js_projet",
+    "version": "1.0.0",
+    "description": "jeu **Just One**.",
+    "main": "justone.js",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/giahg294/JS_projet.git"
+    },
+    "keywords": [],
+    "author": "Gia/Yafei",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/giahg294/JS_projet/issues"
+    },
+    "homepage": "https://github.com/giahg294/JS_projet#readme"
+}

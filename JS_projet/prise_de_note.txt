@@ -1,0 +1,64 @@
+chapter 1
+- Value : 
+number (special : infinity, NaN = not a number)
+string : concatenation, ${}
+Unary operators : typeof renvoie le type de value
+bool : True False
+comparaison : str -> unicode
+Logical operators
+Empty Value : null/undefined
+Automatic type conversion
+
+chapter 2
+Si une expression correspond à un fragment de phrase, une instruction JavaScript correspond à une phrase complète. Un programme est une liste d'instructions.
+utilité du ;
+declaration de variables "let ... = ... ;" 
+decalaration de constante avec "const ... = ... ,"
+FUNCTION
+function name (){};
+const y = function(x){return x};
+prompt("...")  uses the string that we give it as the text to show in the dialog box.
+console.log() // equivalent d'un print
+
+if () {}; 
+else if;
+else;
+while () {};
+do {} while ();
+for (let i=0; i<5; i++) {};
+
+chapter 4
+CALL STACK
+“out of stack space” or “too much recursion” :/ -> Maximum call stack size exceeded
+
+let list = []
+list.push() // equivalent de append
+
+let dico = {}
+dico.assign() // ajoute key et value
+
+chapter 11
+synchrone solution utiliser des threads pour utiliser plusieurs processeurs afin de faire plusieurs tâches en même temps 
+        retourne le résultat quand toutes les tâches sont terminé
+asynchrone : execute tout en même temps et retourne le résultat d'une tâche quand celle-ci est terminée
+        même si d'autres sont encore en cours
+        (ex : lecture de fichier, pause et faire autre chose en même temps)
+        Toute fonction qui appelle une fonction qui fonctionne de manière asynchrone doit elle-même être asynchrone, 
+        en utilisant un rappel ou un mécanisme similaire pour fournir son résultat.
+
+Class Promise :
+    This is what the standard class Promise is for. A promise is a receipt representing a value that may not be available yet. 
+    It provides a then method that allows you to register a function that should be called when the action for which it is waiting finishes. 
+    When the promise is resolved, meaning its value becomes available, such functions (there can be multiple) are called with the result value. 
+    It is possible to call then on a promise that has already resolved—your function will still be called.
+
+let blabla = promise.resolve()
+blabla.then()
+
+Summary
+Asynchronous programming makes it possible to express waiting for long-running actions without freezing the whole program. 
+JavaScript environments typically implement this style of programming using callbacks, functions that are called when the actions complete. 
+An event loop schedules such callbacks to be called when appropriate, one after the other, so that their execution does not overlap.
+Programming asynchronously is made easier by promises, objects that represent actions that might complete in the future, 
+and async functions, which allow you to write an asynchronous program as if it were synchronous.
+
