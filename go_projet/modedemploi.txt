@@ -1,0 +1,11 @@
+go run serverWindows.go
+
+go run clientWindows.go
+copier chemin du .txt
+(le code convertit automatiquement le chemin a un chmin Linux)
+-----------------------------------
+
+go run serverLinux.go
+
+go run clientLinux.go
+copier chemin du .txt et convertir manuellement a un chemin Linux
