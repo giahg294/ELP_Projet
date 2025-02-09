@@ -1,0 +1,122 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"gptandmain2/traitement"
+	"net"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+// var wg sync.WaitGroup
+// var semaphore = make(chan struct{}, 2) // 限制最多 20个并发执行 Louvain
+// var semaphore = make(chan struct{}, runtime.NumCPU()) // 动态设置 Goroutine 限制
+
+// 处理客户端请求
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	scanner := bufio.NewScanner(conn)
+
+	// 读取文件编号
+	if !scanner.Scan() {
+		fmt.Println("Erreur de lecture du numéro de fichier")
+		return
+	}
+	fileNumber, err := strconv.Atoi(scanner.Text())
+	if err != nil || fileNumber < 1 || fileNumber > 3 {
+		fmt.Println("Numéro de fichier invalide")
+		return
+	}
+
+	// 生成文件名
+	fileName := fmt.Sprintf("minigraph%d.txt", fileNumber)
+
+	// 读取对应的文件
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Fprintf(conn, "Erreur: impossible d'ouvrir %s\n", fileName)
+		return
+	}
+	defer file.Close()
+
+	// Créer un nouveau graphe
+	graph := traitement.NewGraph()
+
+	fileScanner := bufio.NewScanner(file)
+
+	for fileScanner.Scan() {
+		line := fileScanner.Text()
+
+		// Ignorer les lignes vides ou les commentaires (lignes qui commencent par "#")
+		if strings.HasPrefix(line, "#") || line == "" {
+			continue
+		}
+		nodes := strings.Fields(line) // Découper la ligne par espace
+		if len(nodes) == 2 {
+			// Convertir les chaînes en entiers
+			u, err := strconv.Atoi(nodes[0])
+			if err != nil {
+				fmt.Println("Erreur lors de la conversion de", nodes[0], "en entier:", err)
+				continue
+			}
+			v, err := strconv.Atoi(nodes[1])
+			if err != nil {
+				fmt.Println("Erreur lors de la conversion de", nodes[1], "en entier:", err)
+				continue
+			}
+
+			// Ajouter l'arête au graphe
+			graph.AddEdge(u, v)
+		}
+	}
+
+	if err := fileScanner.Err(); err != nil {
+		fmt.Fprintf(conn, "Erreur lors de la lecture du fichier : %s\n", err)
+		return
+	}
+
+	// 计算 Louvain 并发（不阻塞主线程）
+	start := time.Now()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		graph.Louvain(10)
+	}()
+	wg.Wait()
+
+	elapsed := time.Since(start)
+	// %v 还是 %s？？？？？？？？？？？？？？？？？
+	fmt.Printf("Louvain algorithm took %v to complete\n", elapsed)
+
+	// 发送计算结果：调用 DisplayCommunities 函数，并将返回的字符串发送到客户端
+	communityOutput := graph.DisplayCommunities()
+	fmt.Fprintf(conn, "%s", communityOutput)
+	sp.AddSession(conn)
+
+}
+
+func main() {
+	// 创建 TCP 监听
+	listener, err := net.Listen("tcp", ":8882")
+	if err != nil {
+		fmt.Println("Erreur de démarrage du serveur :", err)
+		return
+	}
+	defer listener.Close()
+
+	fmt.Println("Serveur en attente de connexions sur le port 8882...")
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Erreur d'acceptation :", err)
+			continue
+		}
+		go handleConnection(conn) // 并发处理多个客户端
+	}
+}

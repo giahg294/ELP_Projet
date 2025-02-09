@@ -1,0 +1,425 @@
+
+这是我的文件结构：
+gptandmain2
+----client
+--------client.go
+----server
+--------server.go
+----traitement
+--------graph.go
+--------louvain.go
+----minigraph1.txt
+----minigraph2.txt
+----minigraph3.txt
+----minigraph4.txt
+----go.mod
+
+
+# graph.go:
+package traitement
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
+type Graph struct {
+	AdjList     map[int][]int
+	Communities map[int]int
+}
+
+// NewGraph crée un graphe vide
+func NewGraph() *Graph {
+	return &Graph{
+		AdjList:     make(map[int][]int),
+		Communities: make(map[int]int),
+	}
+}
+
+// AddEdge ajoute une arête au graphe sans doublon
+func (g *Graph) AddEdge(u, v int) {
+	// Vérifier si l'arête existe déjà
+	if contains(g.AdjList[u], v) || u == v {
+		return
+	}
+	g.AdjList[u] = append(g.AdjList[u], v)
+	g.AdjList[v] = append(g.AdjList[v], u)
+}
+
+// contains vérifie si une slice contient une valeur
+func contains(slice []int, value int) bool {
+	for _, v := range slice {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+// DisplayCommunities affiche les communautés sous forme de groupes de nœuds
+// func (g *Graph) DisplayCommunities() {
+// 	communityGroups := make(map[int][]int)
+// 	for node, community := range g.Communities {
+// 		communityGroups[community] = append(communityGroups[community], node)
+// 	}
+
+//		// Tri des communautés et des nœuds
+//		for community, nodes := range communityGroups {
+//			sort.Ints(nodes)
+//			fmt.Printf("Community %d: %v\n", community, nodes)
+//		}
+//	}
+func (g *Graph) DisplayCommunities() string {
+	var result strings.Builder
+	communityGroups := make(map[int][]int)
+	for node, community := range g.Communities {
+		communityGroups[community] = append(communityGroups[community], node)
+	}
+
+	// Sort communities and nodes
+	for community, nodes := range communityGroups {
+		sort.Ints(nodes)
+		result.WriteString(fmt.Sprintf("Community %d: %v\n", community, nodes))
+	}
+	return result.String()
+}
+
+// PrintGraph affiche le graphe sous forme de listes d'adjacence
+func (g *Graph) PrintGraph() {
+	fmt.Println("Graphe (listes d'adjacence) :")
+	for node, neighbors := range g.AdjList {
+		fmt.Printf("%d: %v\n", node, neighbors)
+	}
+}
+
+
+# louvain.go :
+package traitement
+
+import (
+	"sort"
+)
+
+// Modularity calcule la modularité
+func (g *Graph) Modularity() float64 {
+	m := float64(0)
+	for _, neighbors := range g.AdjList {
+		m += float64(len(neighbors))
+	}
+	m /= 2
+
+	var Q float64
+	for node, neighbors := range g.AdjList {
+		community := g.Communities[node]
+		ki := float64(len(neighbors))
+		for _, neighbor := range neighbors {
+			kj := float64(len(g.AdjList[neighbor]))
+			if g.Communities[neighbor] == community {
+				Q += 1.0 - (ki*kj)/(2.0*m)
+			}
+		}
+	}
+	return Q / (2 * m)
+}
+
+// MergeCommunities fusionne les communautés en un nouveau graphe réduit
+func (g *Graph) MergeCommunities() {
+	newGraph := NewGraph()
+	newCommunities := make(map[int]int)
+	communityMap := make(map[int]int)
+
+	// Fusionner les arêtes entre les communautés
+	for node, community := range g.Communities {
+		for _, neighbor := range g.AdjList[node] {
+			// Ne pas fusionner les arêtes dans la même communauté
+			if g.Communities[neighbor] != community {
+				newGraph.AddEdge(community, g.Communities[neighbor])
+			}
+		}
+		if _, exists := communityMap[community]; !exists {
+			communityMap[community] = len(communityMap) + 1
+		}
+		newCommunities[node] = communityMap[community]
+	}
+
+	// Remplacer l'ancien graphe par le nouveau graphe réduit
+	*g = *newGraph
+	g.Communities = newCommunities
+}
+
+// Louvain exécute l'algorithme Louvain
+func (g *Graph) Louvain(maxIterations int) {
+	nodes := make([]int, 0, len(g.AdjList))
+	for node := range g.AdjList {
+		nodes = append(nodes, node)
+		g.Communities[node] = node
+	}
+	sort.Ints(nodes)
+
+	for iter := 0; iter < maxIterations; iter++ {
+		improvement := false
+
+		// Optimisation locale de la modularité
+		for _, node := range nodes {
+			currentCommunity := g.Communities[node]
+			bestCommunity := currentCommunity
+			bestModularity := g.Modularity()
+
+			for _, neighbor := range g.AdjList[node] {
+				g.Communities[node] = g.Communities[neighbor]
+				newModularity := g.Modularity()
+				if newModularity > bestModularity {
+					bestModularity = newModularity
+					bestCommunity = g.Communities[neighbor]
+					improvement = true
+				}
+			}
+
+			g.Communities[node] = bestCommunity
+		}
+
+		// Si aucune amélioration n'a été faite, terminer l'algorithme
+		if !improvement {
+			break
+		}
+
+		// Fusionner les communautés pour créer un nouveau graphe réduit
+		g.MergeCommunities()
+	}
+}
+ 
+# client.go :
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"strconv"
+)
+
+func main() {
+	// 让用户选择文件编号
+	var fileNumber int
+	fmt.Print("Veuillez choisir un fichier (1-3) : ")
+	_, err := fmt.Scanln(&fileNumber)
+	if err != nil || fileNumber < 1 || fileNumber > 3 {
+		fmt.Println("Numéro invalide ! Veuillez entrer 1, 2 ou 3.")
+		return
+	}
+
+	// 连接到服务器
+	conn, err := net.Dial("tcp", "localhost:8882")
+	if err != nil {
+		fmt.Println("Erreur de connexion au serveur :", err)
+		return
+	}
+	defer conn.Close()
+
+	// 发送编号给服务器
+	writer := bufio.NewWriter(conn)
+	fmt.Fprintln(writer, strconv.Itoa(fileNumber))
+	writer.Flush()
+
+	// 读取服务器返回的结果
+	serverReader := bufio.NewScanner(conn)
+	fmt.Println("Résultat de la détection de communauté :")
+	for serverReader.Scan() {
+		line := serverReader.Text()
+		if line == "FIN" {
+			break
+		}
+		fmt.Println(line)
+	}
+}
+
+
+# server.go :
+
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"gptandmain2/traitement"
+	"net"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+// SessionPool 管理 TCP 连接池
+type SessionPool struct {
+	mu             sync.Mutex
+	pool           map[net.Conn]time.Time // 存储连接及其最后使用时间
+	maxConnections int                    // 最大连接数
+	idleTimeout    time.Duration          // 空闲超时时间
+}
+
+// NewSessionPool 创建一个新的 SessionPool
+func NewSessionPool(maxConnections int, idleTimeout time.Duration) *SessionPool {
+	return &SessionPool{
+		pool:           make(map[net.Conn]time.Time),
+		maxConnections: maxConnections,
+		idleTimeout:    idleTimeout,
+	}
+}
+
+// AddSession 添加一个新的 TCP 连接到池中
+func (sp *SessionPool) AddSession(conn net.Conn) {
+	sp.mu.Lock()
+	defer sp.mu.Unlock()
+
+	// 如果达到最大连接数，关闭最早的连接
+	if len(sp.pool) >= sp.maxConnections {
+		oldestConn := sp.getOldestSession()
+		if oldestConn != nil {
+			fmt.Printf("Connection pool is full. Closing oldest connection: %v\n", oldestConn.RemoteAddr())
+			oldestConn.Close()
+			delete(sp.pool, oldestConn)
+		}
+	}
+
+	sp.pool[conn] = time.Now()
+	fmt.Printf("New connection added to pool: %v\n", conn.RemoteAddr())
+}
+
+// RemoveSession 从池中移除一个连接
+func (sp *SessionPool) RemoveSession(conn net.Conn) {
+	sp.mu.Lock()
+	defer sp.mu.Unlock()
+	delete(sp.pool, conn)
+	fmt.Printf("Connection removed from pool: %v\n", conn.RemoteAddr())
+}
+
+// getOldestSession 获取最早的连接
+func (sp *SessionPool) getOldestSession() net.Conn {
+	var oldestConn net.Conn
+	var oldestTime time.Time
+	for conn, t := range sp.pool {
+		if oldestConn == nil || t.Before(oldestTime) {
+			oldestConn = conn
+			oldestTime = t
+		}
+	}
+	return oldestConn
+}
+
+// handleConnection 处理客户端连接
+func handleConnection(sp *SessionPool, conn net.Conn) {
+
+	defer func() {
+		sp.RemoveSession(conn) // 在连接关闭时移除连接
+		conn.Close()
+	}()
+	// sp.AddSession(conn)
+
+	scanner := bufio.NewScanner(conn)
+
+	// 读取文件编号
+	if !scanner.Scan() {
+		fmt.Println("Erreur de lecture du numéro de fichier")
+		return
+	}
+	fileNumber, err := strconv.Atoi(scanner.Text())
+	if err != nil || fileNumber < 1 || fileNumber > 3 {
+		fmt.Println("Numéro de fichier invalide")
+		return
+	}
+
+	// 生成文件名
+	fileName := fmt.Sprintf("minigraph%d.txt", fileNumber)
+
+	// 读取对应的文件
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Fprintf(conn, "Erreur: impossible d'ouvrir %s\n", fileName)
+		return
+	}
+	defer file.Close()
+
+	// Créer un nouveau graphe
+	graph := traitement.NewGraph()
+
+	fileScanner := bufio.NewScanner(file)
+
+	for fileScanner.Scan() {
+		line := fileScanner.Text()
+
+		// Ignorer les lignes vides ou les commentaires (lignes qui commencent par "#")
+		if strings.HasPrefix(line, "#") || line == "" {
+			continue
+		}
+		nodes := strings.Fields(line) // Découper la ligne par espace
+		if len(nodes) == 2 {
+			// Convertir les chaînes en entiers
+			u, err := strconv.Atoi(nodes[0])
+			if err != nil {
+				fmt.Println("Erreur lors de la conversion de", nodes[0], "en entier:", err)
+				continue
+			}
+			v, err := strconv.Atoi(nodes[1])
+			if err != nil {
+				fmt.Println("Erreur lors de la conversion de", nodes[1], "en entier:", err)
+				continue
+			}
+
+			// Ajouter l'arête au graphe
+			graph.AddEdge(u, v)
+		}
+	}
+
+	if err := fileScanner.Err(); err != nil {
+		fmt.Fprintf(conn, "Erreur lors de la lecture du fichier : %s\n", err)
+		return
+	}
+
+	// 计算 Louvain 并发（不阻塞主线程）
+	start := time.Now()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		graph.Louvain(10)
+	}()
+	wg.Wait()
+
+	elapsed := time.Since(start)
+	if _, ok := sp.pool[conn]; ok {
+		fmt.Printf("Louvain algorithm %v took %v to complete\n", conn.RemoteAddr(), elapsed)
+	}
+
+	// 发送计算结果：调用 DisplayCommunities 函数，并将返回的字符串发送到客户端
+	communityOutput := graph.DisplayCommunities()
+	fmt.Fprintf(conn, "%s", communityOutput)
+
+	// // 更新连接的最后使用时间
+	sp.AddSession(conn)
+}
+
+func main() {
+	// 创建一个最大连接数为 2 的连接池，空闲超时时间为 1 分钟
+	sp := NewSessionPool(2, 20*time.Second)
+
+	// 创建 TCP 监听
+	listener, err := net.Listen("tcp", ":8882")
+	if err != nil {
+		fmt.Println("Erreur de démarrage du serveur :", err)
+		return
+	}
+	defer listener.Close()
+
+	fmt.Println("Serveur en attente de connexions sur le port 8882...")
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Erreur d'acceptation :", err)
+			continue
+		}
+		go handleConnection(sp, conn) // 并发处理多个客户端
+	}
+}
