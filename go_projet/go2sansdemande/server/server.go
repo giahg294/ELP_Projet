@@ -12,15 +12,15 @@ import (
 	"time"
 )
 
-// SessionPool 管理 TCP 连接池
+// SessionPool gère un pool de connexions TCP
 type SessionPool struct {
-	mu             sync.Mutex
-	pool           map[net.Conn]time.Time // 存储连接及其最后使用时间
-	maxConnections int                    // 最大连接数
-	idleTimeout    time.Duration          // 空闲超时时间
+	mu             sync.Mutex             // Mutex pour protéger l'accès concurrentiel à la structure
+	pool           map[net.Conn]time.Time // Stocke les connexions et l'heure de leur dernière utilisation
+	maxConnections int                    // Nombre maximal de connexions
+	idleTimeout    time.Duration          // Durée de timeout pour les connexions inactives
 }
 
-// NewSessionPool 创建一个新的 SessionPool
+// NewSessionPool crée un nouveau SessionPool
 func NewSessionPool(maxConnections int, idleTimeout time.Duration) *SessionPool {
 	return &SessionPool{
 		pool:           make(map[net.Conn]time.Time),
@@ -29,12 +29,12 @@ func NewSessionPool(maxConnections int, idleTimeout time.Duration) *SessionPool 
 	}
 }
 
-// AddSession 添加一个新的 TCP 连接到池中
+// AddSession Ajouter une nouvelle connexion TCP au pool
 func (sp *SessionPool) AddSession(conn net.Conn) {
 	sp.mu.Lock()
 	defer sp.mu.Unlock()
 
-	// 如果达到最大连接数，关闭最早的连接
+	// Si le nombre maximum de connexions est atteint, fermez la connexion la plus ancienne
 	if len(sp.pool) >= sp.maxConnections {
 		oldestConn := sp.getOldestSession()
 		if oldestConn != nil {
@@ -48,7 +48,7 @@ func (sp *SessionPool) AddSession(conn net.Conn) {
 	fmt.Printf("New connection added to pool: %v\n", conn.RemoteAddr())
 }
 
-// RemoveSession 从池中移除一个连接
+// RemoveSession Supprimer une connexion du pool
 func (sp *SessionPool) RemoveSession(conn net.Conn) {
 	sp.mu.Lock()
 	defer sp.mu.Unlock()
@@ -56,7 +56,7 @@ func (sp *SessionPool) RemoveSession(conn net.Conn) {
 	fmt.Printf("Connection removed from pool: %v\n", conn.RemoteAddr())
 }
 
-// getOldestSession 获取最早的连接
+// getOldestSession Obtenez la connexion la plus ancienne
 func (sp *SessionPool) getOldestSession() net.Conn {
 	var oldestConn net.Conn
 	var oldestTime time.Time
@@ -69,18 +69,18 @@ func (sp *SessionPool) getOldestSession() net.Conn {
 	return oldestConn
 }
 
-// handleConnection 处理客户端连接
+// handleConnection Gestion des connexions client
 func handleConnection(sp *SessionPool, conn net.Conn) {
 
 	defer func() {
-		sp.RemoveSession(conn) // 在连接关闭时移除连接
+		sp.RemoveSession(conn) // Retirer la connexion lorsqu'elle est fermée
 		conn.Close()
 	}()
 	// sp.AddSession(conn)
 
 	scanner := bufio.NewScanner(conn)
 
-	// 读取文件编号
+	// Lire le numéro de fichier
 	if !scanner.Scan() {
 		fmt.Println("Erreur de lecture du numéro de fichier")
 		return
@@ -91,10 +91,10 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 		return
 	}
 
-	// 生成文件名
+	// Générer le nom du fichier
 	fileName := fmt.Sprintf("minigraph%d.txt", fileNumber)
 
-	// 读取对应的文件
+	// Lire le fichier correspondant
 	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Fprintf(conn, "Erreur: impossible d'ouvrir %s\n", fileName)
@@ -138,7 +138,7 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 		return
 	}
 
-	// 计算 Louvain 并发（不阻塞主线程）
+	// Calculer la concurrence de Louvain (sans bloquer le thread principal)
 	start := time.Now()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -153,19 +153,19 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 		fmt.Printf("Louvain algorithm %v took %v to complete\n", conn.RemoteAddr(), elapsed)
 	}
 
-	// 发送计算结果：调用 DisplayCommunities 函数，并将返回的字符串发送到客户端
+	// Envoyer les résultats du calcul : appeler la fonction DisplayCommunities et envoyer la chaîne renvoyée au client
 	communityOutput := graph.DisplayCommunities()
 	fmt.Fprintf(conn, "%s", communityOutput)
 
-	// // 更新连接的最后使用时间
+	// Mettre à jour l'heure de la dernière utilisation d'une connexion
 	sp.AddSession(conn)
 }
 
 func main() {
-	// 创建一个最大连接数为 2 的连接池，空闲超时时间为 1 分钟
+	// Créez un pool de connexions avec un maximum de 2 connexions et un délai d'inactivité de 1 minute
 	sp := NewSessionPool(2, 20*time.Second)
 
-	// 创建 TCP 监听
+	// Créer un système d'écoute TCP
 	listener, err := net.Listen("tcp", ":8882")
 	if err != nil {
 		fmt.Println("Erreur de démarrage du serveur :", err)
@@ -181,6 +181,6 @@ func main() {
 			fmt.Println("Erreur d'acceptation :", err)
 			continue
 		}
-		go handleConnection(sp, conn) // 并发处理多个客户端
+		go handleConnection(sp, conn) // Gérer plusieurs clients simultanément
 	}
 }

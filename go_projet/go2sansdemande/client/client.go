@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	// 让用户选择文件编号
+	// Laissez l'utilisateur sélectionner un numéro de fichier
 	var fileNumber int
 	fmt.Print("Veuillez choisir un fichier (1-3) : ")
 	_, err := fmt.Scanln(&fileNumber)
@@ -17,7 +17,7 @@ func main() {
 		return
 	}
 
-	// 连接到服务器
+	// Se connecter au serveur
 	conn, err := net.Dial("tcp", "localhost:8882")
 	if err != nil {
 		fmt.Println("Erreur de connexion au serveur :", err)
@@ -25,12 +25,12 @@ func main() {
 	}
 	defer conn.Close()
 
-	// 发送编号给服务器
+	// Envoyer le numero au serveur
 	writer := bufio.NewWriter(conn)
 	fmt.Fprintln(writer, strconv.Itoa(fileNumber))
 	writer.Flush()
 
-	// 读取服务器返回的结果
+	// Lire le résultat renvoyé par le serveur
 	serverReader := bufio.NewScanner(conn)
 	fmt.Println("Résultat de la détection de communauté :")
 	for serverReader.Scan() {
