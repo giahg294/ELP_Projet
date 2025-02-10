@@ -138,7 +138,7 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 		return
 	}
 
-	// Calculer la concurrence de Louvain (sans bloquer le thread principal)
+	// Calcul de Louvain concurrent(sans bloquer le thread principal)
 	start := time.Now()
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -162,7 +162,7 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 }
 
 func main() {
-	// Créez un pool de connexions avec un maximum de 2 connexions et un délai d'inactivité de 1 minute
+	// Créez un pool de connexions avec un maximum de 2 connexions et un délai d'inactivité de 20 secondes
 	sp := NewSessionPool(2, 20*time.Second)
 
 	// Créer un système d'écoute TCP
@@ -181,6 +181,6 @@ func main() {
 			fmt.Println("Erreur d'acceptation :", err)
 			continue
 		}
-		go handleConnection(sp, conn) // Gérer plusieurs clients simultanément
+		go handleConnection(sp, conn) //  Traitement concurrent de plusieurs clients
 	}
 }

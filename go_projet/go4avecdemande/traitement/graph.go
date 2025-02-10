@@ -39,19 +39,6 @@ func contains(slice []int, value int) bool {
 	return false
 }
 
-// DisplayCommunities affiche les communautés sous forme de groupes de nœuds
-// func (g *Graph) DisplayCommunities() {
-// 	communityGroups := make(map[int][]int)
-// 	for node, community := range g.Communities {
-// 		communityGroups[community] = append(communityGroups[community], node)
-// 	}
-
-//		// Tri des communautés et des nœuds
-//		for community, nodes := range communityGroups {
-//			sort.Ints(nodes)
-//			fmt.Printf("Community %d: %v\n", community, nodes)
-//		}
-//	}
 func (g *Graph) DisplayCommunities() string {
 	var result strings.Builder
 	communityGroups := make(map[int][]int)

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	// 让用户选择文件编号
+	// Laissez l'utilisateur sélectionner un numéro de fichier
 	var fileNumber int
 	fmt.Print("Veuillez choisir un fichier (1-3) : ")
 	_, err := fmt.Scanln(&fileNumber)
@@ -18,7 +18,8 @@ func main() {
 		return
 	}
 
-	// 让用户输入 Goroutines 的数量
+	// Laissez l'utilisateur entrer le nombre de Goroutines
+
 	var numGoroutines int
 	fmt.Print("Veuillez entrer le nombre de Goroutines : ")
 	_, err = fmt.Scanln(&numGoroutines)
@@ -27,7 +28,7 @@ func main() {
 		return
 	}
 
-	// 连接到服务器
+	// Se connecter au serveur
 	conn, err := net.Dial("tcp", "localhost:8882")
 	if err != nil {
 		fmt.Println("Erreur de connexion au serveur :", err)
@@ -35,7 +36,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	// 发送 Goroutines 的数量到服务器
+	// Envoyer le nombre de Goroutines au serveur
 	N_routine := int64(numGoroutines)
 	err = binary.Write(conn, binary.BigEndian, N_routine)
 	if err != nil {
@@ -43,12 +44,12 @@ func main() {
 		return
 	}
 
-	// 发送文件编号给服务器
+	// Envoyer le numero du fichier au serveur
 	writer := bufio.NewWriter(conn)
 	fmt.Fprintln(writer, strconv.Itoa(fileNumber))
 	writer.Flush()
 
-	// 读取服务器返回的结果
+	// Lire le résultat renvoyé par le serveur
 	serverReader := bufio.NewScanner(conn)
 	fmt.Println("Résultat de la détection de communauté :")
 	for serverReader.Scan() {

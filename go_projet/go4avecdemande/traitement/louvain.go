@@ -64,10 +64,10 @@ func (g *Graph) Louvain(maxIterations int, numGoroutines int) {
 	for iter := 0; iter < maxIterations; iter++ {
 		improvement := false
 
-		// 分配节点到不同的 Goroutines
+		// Allouer les nœuds à différents Goroutines
 		nodeChunks := chunk(nodes, numGoroutines)
 		var wg sync.WaitGroup
-		mu := sync.Mutex{} // 互斥锁保护共享数据结构
+		mu := sync.Mutex{} // Le mutex protège la structure de données partagée.
 		for i := 0; i < numGoroutines; i++ {
 			wg.Add(1)
 			go func(chunk []int) {
@@ -97,17 +97,17 @@ func (g *Graph) Louvain(maxIterations int, numGoroutines int) {
 		}
 		wg.Wait()
 
-		// 如果没有改进，则退出
+		// Si aucune amélioration n'est apportée, alors quitter.
 		if !improvement {
 			break
 		}
 
-		// 合并社区
+		// Fusionner les communautés.
 		g.MergeCommunities()
 	}
 }
 
-// chunk 将节点切分为多个块，用于并行处理
+// Chunk divise les nœuds en plusieurs blocs pour un traitement parallèle.
 func chunk(nodes []int, numChunks int) [][]int {
 	chunks := make([][]int, numChunks)
 	for i := range chunks {
