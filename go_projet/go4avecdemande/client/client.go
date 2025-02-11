@@ -18,12 +18,7 @@ func main() {
 		return
 	}
 
-<<<<<<< HEAD
 	// Laissez l'utilisateur saisir le nombre de Goroutines
-=======
-	// Laissez l'utilisateur entrer le nombre de Goroutines
-
->>>>>>> 47ccd1611529c2176587f72461728384faaad031
 	var numGoroutines int
 	fmt.Print("Veuillez entrer le nombre de Goroutines : ")
 	_, err = fmt.Scanln(&numGoroutines)
@@ -48,20 +43,12 @@ func main() {
 		return
 	}
 
-<<<<<<< HEAD
 	// Envoyer le numéro de fichier au serveur
-=======
-	// Envoyer le numero du fichier au serveur
->>>>>>> 47ccd1611529c2176587f72461728384faaad031
 	writer := bufio.NewWriter(conn)
 	fmt.Fprintln(writer, strconv.Itoa(fileNumber))
 	writer.Flush()
 
-<<<<<<< HEAD
 	// Lire les résultats renvoyés par le serveur
-=======
-	// Lire le résultat renvoyé par le serveur
->>>>>>> 47ccd1611529c2176587f72461728384faaad031
 	serverReader := bufio.NewScanner(conn)
 	fmt.Println("Résultat de la détection de communauté :")
 	for serverReader.Scan() {
