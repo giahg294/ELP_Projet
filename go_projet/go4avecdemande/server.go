@@ -13,12 +13,16 @@ import (
 	"time"
 )
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 // SessionPool gère le pool de connexions TCP
+=======
+// SessionPool gère un pool de connexions TCP
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 type SessionPool struct {
-	mu             sync.Mutex
-	pool           map[net.Conn]time.Time // 存储连接及其最后使用时间
-	maxConnections int                    // 最大连接数
-	idleTimeout    time.Duration          // 空闲超时时间
+	mu             sync.Mutex             // Mutex pour protéger l'accès concurrentiel à la structure
+	pool           map[net.Conn]time.Time // Stocke les connexions et l'heure de leur dernière utilisation
+	maxConnections int                    // Nombre maximal de connexions
+	idleTimeout    time.Duration          // Durée de timeout pour les connexions inactives
 }
 
 // NewSessionPool crée un nouveau SessionPool
@@ -30,7 +34,11 @@ func NewSessionPool(maxConnections int, idleTimeout time.Duration) *SessionPool 
 	}
 }
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 // AddSession ajoute une nouvelle connexion TCP au pool
+=======
+// AddSession Ajouter une nouvelle connexion TCP au pools
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 func (sp *SessionPool) AddSession(conn net.Conn) {
 	sp.mu.Lock()
 	defer sp.mu.Unlock()
@@ -57,7 +65,11 @@ func (sp *SessionPool) RemoveSession(conn net.Conn) {
 	fmt.Printf("Connection removed from pool: %v\n", conn.RemoteAddr())
 }
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 // getOldestSession Obtenez la première connexion
+=======
+// getOldestSession Obtenez la connexion la plus ancienne
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 func (sp *SessionPool) getOldestSession() net.Conn {
 	var oldestConn net.Conn
 	var oldestTime time.Time
@@ -70,15 +82,26 @@ func (sp *SessionPool) getOldestSession() net.Conn {
 	return oldestConn
 }
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 // handleConnection Gérer les connexions clients
 func handleConnection(sp *SessionPool, conn net.Conn) {
 	defer func() {
 		sp.RemoveSession(conn) // Supprimer la connexion lorsqu'elle est fermée
+=======
+// handleConnection Gestion des connexions client
+func handleConnection(sp *SessionPool, conn net.Conn) {
+	defer func() {
+		sp.RemoveSession(conn) // Retirer la connexion lorsqu'elle est fermée
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 		conn.Close()
 	}()
 	sp.AddSession(conn)
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 	// Lire le nombre de Goroutines
+=======
+	// Lire nombre de Goroutines
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 	var N_routine int64
 	err := binary.Read(conn, binary.BigEndian, &N_routine)
 	if err != nil {
@@ -100,7 +123,11 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 	}
 
 	// Générer le nom du fichier
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 	fileName := fmt.Sprintf("data/minigraph%d.txt", fileNumber)
+=======
+	fileName := fmt.Sprintf("minigraph%d.txt", fileNumber)
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 
 	// Lire le fichier correspondant
 	file, err := os.Open(fileName)
@@ -142,13 +169,21 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 		return
 	}
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 	// Calculer la simultanéité de Louvain (sans bloquer le thread principal)
+=======
+	// // Calcul de Louvain concurrent(sans bloquer le thread principal)
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 	start := time.Now()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 		graph.Louvain(10, int(N_routine)) // Utiliser le nombre de Goroutines transmis par le client
+=======
+		graph.Louvain(10, int(N_routine)) // Utiliser le nombre de Goroutines choisi par l'utilisateur
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 	}()
 	wg.Wait()
 
@@ -157,16 +192,27 @@ func handleConnection(sp *SessionPool, conn net.Conn) {
 		fmt.Printf("Louvain algorithm %v took %v to complete\n", conn.RemoteAddr(), elapsed)
 	}
 
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 	// Envoyer les résultats du calcul : appelez la fonction DisplayCommunities et envoyez la chaîne renvoyée au client
 	communityOutput := graph.DisplayCommunities()
 	fmt.Fprintf(conn, "%s", communityOutput)
 
 	// Envoyer le drapeau de fin
+=======
+	// Envoyer les résultats du calcul : appeler la fonction DisplayCommunities et envoyer la chaîne renvoyée au client
+	communityOutput := graph.DisplayCommunities()
+	fmt.Fprintf(conn, "%s", communityOutput)
+
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 	fmt.Fprintln(conn, "FIN")
 }
 
 func main() {
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 	// Créez un pool de connexions avec un nombre maximum de connexions de 2 et un délai d'inactivité de 1 minute.
+=======
+	// Créez un pool de connexions avec un maximum de 2 connexions et un délai d'inactivité de 20 secondes
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 	sp := NewSessionPool(2, 20*time.Second)
 
 	// Créer un écouteur TCP
@@ -185,6 +231,10 @@ func main() {
 			fmt.Println("Erreur d'acceptation :", err)
 			continue
 		}
+<<<<<<< HEAD:go_projet/go4avecdemande/server.go
 		go handleConnection(sp, conn) // Gérer plusieurs clients simultanément
+=======
+		go handleConnection(sp, conn) // Traitement concurrent de plusieurs clients
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031:go_projet/go4avecdemande/server/server.go
 	}
 }

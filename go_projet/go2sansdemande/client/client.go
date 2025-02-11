@@ -25,12 +25,20 @@ func main() {
 	}
 	defer conn.Close()
 
+<<<<<<< HEAD
 	// Envoyer le numéro au serveur
+=======
+	// Envoyer le numero au serveur
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031
 	writer := bufio.NewWriter(conn)
 	fmt.Fprintln(writer, strconv.Itoa(fileNumber))
 	writer.Flush()
 
+<<<<<<< HEAD
 	// Lire les résultats renvoyés par le serveur
+=======
+	// Lire le résultat renvoyé par le serveur
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031
 	serverReader := bufio.NewScanner(conn)
 	fmt.Println("Résultat de la détection de communauté :")
 	for serverReader.Scan() {

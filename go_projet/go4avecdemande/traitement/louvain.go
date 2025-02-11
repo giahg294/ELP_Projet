@@ -139,6 +139,7 @@ func (g *Graph) Louvain(maxIterations int, numGoroutines int) {
 		var wg sync.WaitGroup // Synchronise l'exécution des goroutines
 		mu := sync.Mutex{} // Protège g.Communities et improvement -> éviter des conflits lors des mises à jour concurrentes
 
+<<<<<<< HEAD
 		// Canal pour distribuer les nœuds aux goroutines
 		nodeChan := make(chan int, len(nodes)) 
 		for _, node := range nodes {
@@ -147,6 +148,12 @@ func (g *Graph) Louvain(maxIterations int, numGoroutines int) {
 		close(nodeChan)
 
 		// Lancer les workers
+=======
+		// Allouer les nœuds à différents Goroutines
+		nodeChunks := chunk(nodes, numGoroutines)
+		var wg sync.WaitGroup
+		mu := sync.Mutex{} // Le mutex protège la structure de données partagée.
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031
 		for i := 0; i < numGoroutines; i++ {
 			wg.Add(1) //  nouvelle goroutine a été créée
 			go func(id int) { // Lancer goroutine
@@ -189,16 +196,25 @@ func (g *Graph) Louvain(maxIterations int, numGoroutines int) {
 		// Attendre la fin de toutes les goroutines
 		wg.Wait()
 
+<<<<<<< HEAD
 		// Si aucune amélioration n'a été faite, on arrête
+=======
+		// Si aucune amélioration n'est apportée, alors quitter.
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031
 		if !improvement {
 			break
 		}
 
+<<<<<<< HEAD
 		// Fusionner les communautés après l'amélioration
+=======
+		// Fusionner les communautés.
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031
 		g.MergeCommunities()
 	}
 }
 
+<<<<<<< HEAD
 func main() {
 	// Création du graphe
 	g := NewGraph()
@@ -211,3 +227,16 @@ func main() {
 	g.Louvain(10, 4)
 	fmt.Println("Communautés après Louvain:", g.Communities)
 }
+=======
+// Chunk divise les nœuds en plusieurs blocs pour un traitement parallèle.
+func chunk(nodes []int, numChunks int) [][]int {
+	chunks := make([][]int, numChunks)
+	for i := range chunks {
+		chunks[i] = make([]int, 0)
+	}
+	for i, node := range nodes {
+		chunks[i%numChunks] = append(chunks[i%numChunks], node)
+	}
+	return chunks
+}
+>>>>>>> 47ccd1611529c2176587f72461728384faaad031
