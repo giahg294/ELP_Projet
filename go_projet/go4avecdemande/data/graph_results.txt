@@ -1,0 +1,4 @@
+minigraph1.txt  :   10 noeuds -> 83.665µs
+minigraph2.txt  :   20 noeuds -> 139.261µs
+minigraph3.txt  :   ~7000 arêtes (début du graph de amazon juste) -> temps d'exécution 1.513903741s
+minigraph4.txt  :   fichier amazon entier beaucoup trop gros -> temps de calcul trop long
